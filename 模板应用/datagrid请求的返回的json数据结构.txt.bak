@@ -1,0 +1,61 @@
+1.datagrid分页json结构
+{
+    "total": 3720,
+    "rows": [
+        {
+            "designedUser": "施明",
+            "engineeringLevel": 1,
+            "id": 31001,
+            "instanceNameZh": "车身",
+            "pBomId": 13941,
+            "parentId": 0,
+            "parentPart": "FB-SV91",
+            "partIndentification": "CnVRLlmsx7e5KB",
+            "partNumber": "5-SV91",
+            "partPhase": "Working",
+        },
+	{
+            "designedUser": "施明2",
+            "engineeringLevel": 2,
+            "id": 31002,
+            "instanceNameZh": "车身2",
+            "pBomId": 13942,
+            "parentId": 0,
+            "parentPart": "FB-SV912",
+            "partIndentification": "CnVRLlmsx7e5KB2",
+            "partNumber": "5-SV912",
+            "partPhase": "Working2",
+        }
+	。。。。
+     ]
+  }
+
+2.1.datagrid不分页json结构
+     {
+      "rows":[
+        {
+            "designedUser": "施明",
+            "engineeringLevel": 1,
+            "id": 31001,
+            "instanceNameZh": "车身",
+            "pBomId": 13941,
+            "parentId": 0,
+            "parentPart": "FB-SV91",
+            "partIndentification": "CnVRLlmsx7e5KB",
+            "partNumber": "5-SV91",
+            "partPhase": "Working",
+        },
+	{
+            "designedUser": "施明2",
+            "engineeringLevel": 2,
+            "id": 31002,
+            "instanceNameZh": "车身2",
+            "pBomId": 13942,
+            "parentId": 0,
+            "parentPart": "FB-SV912",
+            "partIndentification": "CnVRLlmsx7e5KB2",
+            "partNumber": "5-SV912",
+            "partPhase": "Working2",
+        }
+	。。。。
+     ]}
