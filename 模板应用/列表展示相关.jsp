@@ -469,10 +469,6 @@
 								<option value="1">正常</option>	
 								<option value="2">待删除</option>	
 								<option value="3">更新</option>
-								<option value="4">新增</option>
-								<option value="5">替换</option>	
-								<option value="6">被替换</option>
-								<option value="7">删除</option>		
 							</select> 
 						</div>
 					</div>
