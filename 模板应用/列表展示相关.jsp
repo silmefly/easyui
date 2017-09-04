@@ -50,15 +50,26 @@
 			var weldingBomInstanceManage={};
 			var $weldingBomInstanceGrid;
 			var colAtter="";//当前列表属性名数据
-			var conAtter="";//当前过滤条件名数据
 			var treeCol="";//设置过后列表属性名数据
-			var treeCon="";//设置过后滤条件名数据
 			var treeColumns=[];
-			//设置展示列表
+			/*设置展示列表，
+				由于datagrid中的columns：对应的列表格式如下
+				[[
+				{field:'',title:''},
+				{field:'',title:''}
+				]]
+				因此renderColumns函数的功能是将查询到的列表结果封装成：
+				colum = [
+				{field:'',title:''},
+				{field:'',title:''}
+				]
+				然后再：[colum]
+			*/
 			function renderColumns(columns_){
  				var _columns = [
 					{field:'_checkbox','checkbox':true }
 	 			];
+				//columns_的结构为：[{atterName:"",ittleName:""},{atterName:"",ittleName:""}]
  	 			$.each(columns_,function(index,el){
  	 				if(el['atterName']=="partStatus"){
  	 					_columns.push({field:el['atterName'],title:el['titleName'],width:100, sortable:false,
@@ -85,10 +96,6 @@
  	 					});
  	 				}else if(el['atterName']=="id"){
  	 					_columns.push({field:el['atterName'],title:el['titleName'],width:100,hidden:true});
- 	 				}else if(el['atterName']=="variateCondition"){
- 	 					_columns.push({field:el['atterName'],title:el['titleName'],width:180,sortable:true});
- 	 				}else if(el['atterName']=="partIndentification"){
- 	 					_columns.push({field:el['atterName'],title:el['titleName'],width:140,sortable:true});
  	 				}else if(el['atterName']=="bopTrBiwUpLoadID"){
  	 					_columns.push({field:el['atterName'],title:el['titleName'],width:100, sortable:false,
 							formatter:function(value,dataRow,index){
@@ -107,10 +114,19 @@
  			}
 			
 	 		$(function(){
-	 			var columns_ = ${result.columns};//用户设置或默认的列表
+				/*
+				 result：为从后台数据库中传过来的保存用户数值的显示列表的信息，result是一个map集合
+				 key：columns存放了显示列表信息
+				*/
+	 			var columns_ = ${result.columns};//用户设置或默认的列表，
+				/*Some.util.jsonObject() ???不是太理解:
+					jsonObject:function(str){
+						return (new Function("return " + str))();
+					 },
+				*/
 	 			var columnsJs = Some.util.jsonObject('${result.columns}');
 	 			for(var j=0;j<columnsJs.length;j++){
-	 				colAtter=colAtter+columnsJs[j].atterName+",";
+	 				colAtter=colAtter+columnsJs[j].atterName+",";//将当前的显示列表信息保存下来，用             //以当用户设置后的数据进行比较,如果没有发生变化，就不提交数据
 	 			}
 				columns = renderColumns(columns_);
 
@@ -169,8 +185,7 @@
 									return str+value;
 								}
 							},
-							{field:'instanceNameZh',title:"零件中文名称",width:120, sortable:false }
-							
+							{field:'instanceNameZh',title:"零件中文名称",width:120, sortable:false }	
 						]]*/
 					});
 
@@ -238,13 +253,19 @@
 	 		weldingBomInstanceManage.method={
  				//设置
  				setup:function(){
- 					$('#columnSelectTree').tree({
+ 					$('#columnSelectTree').tree({//查询所有列表，以tree的形式展示
  						url : "weldingBomInstanceAction!findTreeByUserId.act",
 	 					checkbox:true,//每个节点前有复选框
 	 				    queryParams:{"type":3},
 	 				    dnd:true,//开启拖拽功能，可以排序
+						/*
+							在拖动一个节点之前触发，返回false可以拒绝拖动。
+								target：释放的目标节点元素。
+								source：开始拖动的源节点。
+								point：表示哪一种拖动操作，可用值有：'append','top' 或 'bottom'。
+						*/
 	 				    onBeforeDrop:function(target, source, point){
-	 					   if("append"==point){
+	 					   if("append"==point){//append只当移动到目标本身时取消拖动
 	 						   return false;
 	 					   }
 	 				   }
@@ -255,18 +276,17 @@
 	 				    width:500,    
 	 				    height: 400,    
 	 				    cache: false,    
-	 				    modal: true,
-	 				    resizable:true,
+	 				    modal: true,//将窗体显示为模式化窗口。
+	 				    resizable:true,//能够改变窗口大小。
 	 				    buttons:[{
 							text:"<s:text name='confirm'/>",
 							iconCls:'icon-ok',
 							handler:function(){
 								treeColumns.length=0;
-								treeIds="";
-								treeShow="";
+								treeIds="";//勾选的列表id
 								var checked = $('#columnSelectTree').tree('getChecked');//获取列表勾
 								$.each(checked,function(i,n){
-	 								treeColumns.push({"atterConfigId":n.id,"atterName":n.atterName,"titleName":n.text,"sequence":i+1});
+	 								treeColumns.push({"atterConfigId":n.id,"atterName":n.atterName,"titleName":n.text,"sequence":i+1});//封装用户设置后的列表及其顺//序
 	 								treeIds = treeIds+n.id+",";
 	 								treeCol=treeCol+n.atterName+",";
 	 							});
@@ -280,10 +300,9 @@
 								}
 								var colJsons=[
 								              {columns:treeIds,type:3}
-								              ];
+								             ];
 								
 								if(treeIds.length>0){
-									
 									$.post("weldingBomInstanceAction!updateColumns.act",
 										{columns:Some.util.toJson(colJsons)},function(result){
 											$show("设置成功!");
@@ -293,7 +312,6 @@
 										$weldingBomInstanceGrid.datagrid({    
 											columns:[columns]
 										});
-								
 										$('#columnSelectDialog').dialog("close");
 		 							});
 								}else{
@@ -303,6 +321,7 @@
 						}]
 					});
  				},
+
  				//提交查询条件
  		 		search:function(){
  					var searchJSON={};
@@ -319,270 +338,20 @@
 					 $('#packageId').combobox("clear");
 					 $('#selectPH').combobox("clear");
 					$('#selectPH').combobox("reload"); 
-					$("#partNumber,#instanceNameZh,#ffc,#shortSvpps,#typeId,#variateCondition").val("");
+					$("#partNumber,#instanceNameZh,#ffc,#shortSvpps,#typeId").val("");
 					$weldingBomInstanceGrid.datagrid('clearChecked');
 					$weldingBomInstanceGrid.datagrid("load",{"bopTmDataSet.id":'${bopTmDataSet.id}'});
- 		 		},
- 		 		//上件
- 		 		upload:function(){
- 		 			var checked = $weldingBomInstanceGrid.datagrid("getChecked");
- 					var upObj="" ;
- 					if(0==checked.length){
-							$alert("请选择上件零件");
-							return false;
-						}else{
-							for(var i=0;i<checked.length;i++){
-								if("B" ==  (checked[i].partSource) || ("P" == checked[i].partSource)){
-									if("2" != checked[i].partStatus){
-										upObj=upObj+checked[i].id+",";
-									}else{
-										$alert("该零件已删除，无法上件，请重新选择！");
-										return false;
-									}
-								}else{
-									$alert("选择的零件不符合要求(零件来源为B或P)，请重新选择！");
-									return false;
-								}
-							} 
-						}
- 					
- 		 			var $upload = $('<div id="uploadDialog"></div>').dialog({
- 		 				href : "weldingBomInstanceAction!showUpload.act",
- 		 				queryParams:{"upObj":upObj,"bopTmDataSet.id":'${bopTmDataSet.id}'},
- 		 				top:100,
-						title:"<s:text name='零件上件'/>",
-						width:800,
-						height:600,
-						modal:true,
-						resizable:true,
-						onClose:function(){
-							$upload.dialog("destroy");
- 							return true;
-						},
-						buttons:[{
-							text:"<s:text name='confirm'/>",
-							iconCls:'icon-ok',
-							handler:function(){
-								var changeLayoutIds="";
-								var changePart="";
-								for(var i=0;i<changeLayoutId.length;i++){
-									if(undefined!=changeLayoutId[i]){
-										changeLayoutIds +=changeLayoutId[i]+",";
-										var children = $('#confirmPart').treegrid('getChildren',changetrProjectLayoutId[i]);
-										for(var j=0;j<children.length;j++){
-									     changePart+=changeLayoutId[i]+"="+(children[j].biwBomId)+",";
-										}
-									}
-									
-								}
-						
-								$.ajax({
-									type:"post",
-									url:"weldingBomInstanceAction!addOrdelPart.act",
-									data:{"changePart":changePart,"changeLayoutIds":changeLayoutIds},
-									async:false,
-								    success:function(data){
-								    	$show("上件成功");
-								    },
-								    error:function(){
-								    	$alert("上件失败");
-								    }
-								});
-								var searchJSONs={};
-			 					searchJSONs["selectPH"]=$("#selectPH").combobox('getValues');//多选
-			 					searchJSONs["partNumber"]=$("#partNumber").val();//模糊查询
-			 					searchJSONs["instanceNameZh"]=$("#instanceNameZh").val();//模糊查询
-			 					searchJSONs["ffc"]=$("#ffc").val();//精确查询
-			 					searchJSONs["shortSvpps"]=$("#shortSvpps").val();//精确查询
-			 					searchJSONs["partType"]=$("#partType").combobox('getValues');//多选
-			 					searchJSONs["partSource"]=$("#partSource").combobox('getText');//多选
-			 					searchJSONs["code"]=$("#packageId").combobox('getValue');//车型ID
-			 					searchJSONs["partStatus"]=$("#partStatus").combobox('getValue');//状态
-			 					searchJSONs["variateCondition"]=$("#variateCondition").val();//变量条件
-			 					searchJSONs["upLoad"]=$("#upLoad").combobox('getValue');//多选
-			 					$weldingBomInstanceGrid.datagrid('clearChecked');
-								$weldingBomInstanceGrid.datagrid("reload",{"filterJsons":Some.util.toJson(searchJSONs),"bopTmDataSet.id":'${bopTmDataSet.id}'});
-								$upload.dialog("close");
-							},
-						},{
-							text:"<s:text name='取消'/>",
-							iconCls:'icon-quxiao',
-							handler:function(){
-								$upload.dialog("close");
-							},
-						}]
-					});
- 		 		},
+ 		 		}
  		 		
- 		 		//焊点区域
- 		 		swRegion : function(){
- 		 			var checks = $weldingBomInstanceGrid.datagrid("getChecked");
- 					var params = {"bopTmDataSet.id":'${bopTmDataSet.id}'};
- 					var partId = "";		//焊装零件号字符串
- 					var pBomId = "";		//零件库零件号字符串
- 					var notIsMPartNumber = "";		//存储零件来源不适用于M的零件号
- 					var flag = false;
- 					for(var i in checks){
-		 				if(checks[i].partSource=="M"){
-		 					partId +="," + checks[i].id;
-		 					pBomId +="," + checks[i].pBomId;
-		 				}else if(!flag){
-		 					notIsMPartNumber = checks[i].partNumber;
-		 					flag = true;
-		 				}
-		 			}
-		 			if(notIsMPartNumber!=""&&notIsMPartNumber!=undefined){
-		 				$show(notIsMPartNumber+"...等零件不符合要求(零件来源为M)，请重新选择！");
-		 			}
- 					params["partId"] = partId;
- 					params["bomId"] = pBomId;
- 		 			var $regionDialog = $('<div id="region"></div>').dialog({
- 		 				href : "weldingBomInstanceAction!showRegion.act",
- 		 				queryParams:params,
- 		 				top:100,
-						title:"<s:text name='焊点区域'/>",
-						width:800,
-						height:600,
-						resizable:true,
-						modal:true,
-						onClose:function(){
-							$regionDialog.remove();
-						},
-						buttons:[{
-							text:"<s:text name='confirm'/>",
-							handler:function(){
-								var addPartIds = "";
-								var addRegionIds = "";
-								var delPartIds = "";
-								for(var i=0;i<addPartIdArr.length;i++){
-									addPartIds +=","+addPartIdArr[i];
-									addRegionIds +=","+addRegionIdArr[i];
-								}
-								for(var i=0;i<delPartIdArr.length;i++){
-									delPartIds +=","+delPartIdArr[i];
-								}
-								var loading=new Some.loading();
-								loading.show();
-								$.post("weldingBomInstanceAction!partMoveRegion.act",
-									{"addPartIds":addPartIds,"addRegionIds":addRegionIds,"delPartIds":delPartIds},
-									function(data){
-											loading.close();
-											handlerResult(data,
-			 								function(rs){
-			 		 	      	  				$regionDialog.dialog("close");
-			 		 	      	  				$show(rs.message);
-			 								},
-			 								function(rs){
-			 									$alert(rs.message);
-			 								}
-			 							);
-									}
-								); 
-							},
-							iconCls:'icon-ok'
-						},{
-							text:"<s:text name='label_cancel'/>",
-							handler:function(){
-								$regionDialog.dialog("close");
-							},
-							iconCls:'icon-cancel'
-						}]
-					});
- 		 		}
- 		 		//焊接结构
- 		 		,showStructure : function(){
- 		 			var checks = $weldingBomInstanceGrid.datagrid("getChecked");
- 		 			
- 		 			
- 		 			if(checks==null || checks.length<1){
- 	 					$alert("请选择SW文件");
- 	 					return false;
- 		 			}
- 					var params = {"bopTmDataSet.id":'${bopTmDataSet.id}'};
- 					var partId = "";		//焊装零件号字符串
- 					var pBomId = "";		//零件库零件号字符串
- 					var engineeringLevel = "";
- 					var parentPart = "";
- 					for(var i in checks){
-		 				//if(checks[i].partSource=="M"){
-		 				if(engineeringLevel == "" || parentPart == ""){
-		 					engineeringLevel = checks[i].engineeringLevel;
-		 					parentPart = checks[i].parentPart;
-		 				}else{
-		 					if(checks[i].engineeringLevel != engineeringLevel || parentPart!=checks[i].parentPart){
-		 						$alert("请选择同一个MP下平级的SW文件");
-		 						return false;
-		 					}
-		 				}
-		 				if(checks[i].partType!="SW"){
-		 					$alert("请选择SW类型文件");
-	 						return false;
-		 				}
-	 					partId += checks[i].id+"," ;
-	 					pBomId += checks[i].pBomId+",";
-		 			}
- 					params["partId"] = partId;
- 					params["bomId"] = pBomId;
- 		 			var $regionDialog = $('<div id="region"></div>').dialog({
- 		 				href : "weldingBomInstanceAction!showStructure.act",
- 		 				queryParams:params,
- 		 				top:100,
-						title:"<s:text name='焊接结构'/>",
-						width:800,
-						height:600,
-						resizable:true,
-						modal:true,
-						onClose:function(){
-							$regionDialog.remove();
-						},
-						buttons:[{
-							text:"<s:text name='confirm'/>",
-							handler:function(){
-							
-								var loading=new Some.loading();
-								loading.show();
-								$.post("weldingBomInstanceAction!saveStructure.act",
-									{"partId":$("#partId").val(),"phPartIds":checkPhIds},
-									function(data){
-											loading.close();
-											handlerResult(data,function(rs){
-			 		 	      	  				$regionDialog.dialog("close");
-			 		 	      	  				$show(rs.message);
-			 								},
-			 								function(rs){
-			 									$alert(rs.message);
-			 								}
-			 							);
-									}
-								);
-							},
-							iconCls:'icon-ok'
-						},{
-							text:"<s:text name='label_cancel'/>",
-							handler:function(){
-								$regionDialog.dialog("close");
-							},
-							iconCls:'icon-cancel'
-						}]
-					});
- 		 		}
-	 		};
-	 		//对获取的titles进行处理
-			selectedTitles=function (setupDialog){
-				$selectedTitles = $("#selectedTitles input");
-				for(var i=0;i<$selectedTitles.length;i++){
-					if($selectedTitles[i].checked == false){
-						$("td[field=$selectedTitles[i].value]").attr("hidden",true);
-						alert($selectedTitles[i].value);
-					}
-				}
-			};
+ 		 	}
+ 		 	
 	 		
 		 </script>
 	</head>
 	
 	<body class="easyui-layout">
-		       <div id="columnSelectDialog">
+	<%-- 用于显示设置弹出框 --%>
+		<div id="columnSelectDialog">
 			<div class="easyui-tabs" data-options="fit:true">
 				<div title="列表设置" >
 					<ul id="columnSelectTree"></ul> 
@@ -718,7 +487,7 @@
 					<div class="search-div">
 						<a href="#" class="easyui-linkbutton " data-options="iconCls:'icon-search', plain:true"   
 						   onclick="weldingBomInstanceManage.method.search()">
-						   <s:property value="%{getText('inquiry')}"/>
+						   <s:property value="%{getText('inquiry')}"/> <%--国际化--%>
 						</a>
 						<a href="#" class="easyui-linkbutton "  data-options="iconCls:'icon-reload', plain:true" 
 						   onclick="weldingBomInstanceManage.method.reset()">
